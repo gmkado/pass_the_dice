@@ -1,60 +1,36 @@
-import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class Controller extends GetxController {
-  RxList<int> rollHistory;
-  RxBool showBarchart = true.obs;
+import 'dice_roll.dart';
+import 'main.data.dart';
 
-  Controller(GetStorage storage) {
-    // load saved (for some reason this doesn't work as a oneliner...)
-    List<int> rh = (storage.read('rollHistory') ?? []).cast<int>();
-    rollHistory = rh.obs;
+part 'controller.g.dart';
 
-    bool sb = storage.read('showBarchart') ?? true;
-    showBarchart = sb.obs;
-
-    // initialize rollcounts
-    rollHistory.forEach((element) => rollCounts[element - 2].count++);
-
-    // save on change
-    rollHistory.listen((rh) async => await storage.write('rollHistory', rh));
-    showBarchart.listen((sb) async => await storage.write('showBarchart', sb));
+@Riverpod(keepAlive: true)
+class RollHistory extends _$RollHistory {
+  @override
+  FutureOr<List<DiceRoll>> build() async {
+    final dice = ref.diceRolls.watchAll(remote: false);
+    return dice.model ?? [];
   }
 
-  List<DiceCount> rollCounts = [
-    DiceCount(2),
-    DiceCount(3),
-    DiceCount(4),
-    DiceCount(5),
-    DiceCount(6),
-    DiceCount(7),
-    DiceCount(8),
-    DiceCount(9),
-    DiceCount(10),
-    DiceCount(11),
-    DiceCount(12),
-  ];
+  void undo() async {
+    if (state.valueOrNull?.lastOrNull == null) return;
 
-  addRoll(int value) {
-    rollCounts[value - 2].count++;
-    rollHistory.add(value);
-  }
-
-  undoRoll() {
-    if (rollHistory.isNotEmpty) {
-      rollCounts[rollHistory.removeLast() - 2].count--;
-    }
-  }
-
-  clearAllRolls() {
-    rollHistory.clear();
-    rollCounts.forEach((element) => element.count.value = 0);
+    ref.diceRolls.delete(state.requireValue.last, remote: false);
   }
 }
 
-class DiceCount {
-  final int value;
-  RxInt count = 0.obs;
+@riverpod
+FutureOr<IMap<DiceRoll, int>> getDiceCount(GetDiceCountRef ref) async {
+  final rollHistory = await ref.watch(rollHistoryProvider.future);
+  Map<DiceRoll, int> counts = {};
 
-  DiceCount(this.value);
+  rollHistory.forEach((roll) => counts.update(
+        roll,
+        (value) => value + 1,
+        ifAbsent: () => 1,
+      ));
+
+  return counts.lock;
 }

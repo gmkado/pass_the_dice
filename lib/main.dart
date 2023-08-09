@@ -1,67 +1,79 @@
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get/get_navigation/src/root/get_material_app.dart';
-import 'package:get/get_navigation/src/routes/get_route.dart';
 import 'package:fl_chart/fl_chart.dart';
-
-import 'bindings.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'async_value_widget.dart';
 import 'controller.dart';
+import 'dice_roll.dart';
+import 'main.data.dart';
 
 void main() async {
-  var bindings = HomeBindings();
-  await bindings.dependencies();
-
-  runApp(GetMaterialApp(
-    initialRoute: '/home',
-    getPages: [GetPage(name: '/home', page: () => Home(), binding: bindings)],
-  ));
+  runApp(
+    ProviderScope(
+      child: MainApp(),
+      overrides: [configureRepositoryLocalStorage()],
+    ),
+  );
 }
 
-class Home extends GetView<Controller> {
+class MainApp extends HookConsumerWidget {
+  const MainApp({super.key});
+
   @override
-  Widget build(context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp(
+        home: Scaffold(
+            body: AsyncValueWidget(
+                value: ref.watch(repositoryInitializerProvider),
+                data: (_) => HomePage())));
+  }
+}
+
+class HomePage extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final showBarchart = useState(false);
     return Scaffold(
         appBar: AppBar(
           title: Text("Pass the dice"),
           actions: [
-            Obx(() => Switch(
+            Switch(
                 activeTrackColor: Colors.white,
                 activeColor: Colors.blue.shade800,
-                value: controller.showBarchart(),
-                onChanged: (val) => controller.showBarchart.value = val)),
+                value: showBarchart.value,
+                onChanged: (val) => showBarchart.value = val),
             IconButton(
                 icon: Icon(Icons.delete),
-                onPressed: () => controller.clearAllRolls())
+                onPressed: () => ref.diceRolls.clear())
           ],
         ),
         body: Column(children: [
           Expanded(
               child: Padding(
                   padding: EdgeInsets.all(16),
-                  child: Obx(() {
-                    if (controller.showBarchart()) {
-                      return StackedRollGraph();
-                    } else {
-                      return HistoryGraph();
-                    }
-                  }))),
-          Wrap(children: getButtonList(context, 2, 12))
+                  child: showBarchart.value
+                      ? StackedRollGraph()
+                      : HistoryGraph())),
+          Wrap(children: getButtonList(context, ref, 2, 12))
         ]));
   }
 
-  List<Widget> getButtonList(BuildContext context, int min, int max) {
+  List<Widget> getButtonList(
+      BuildContext context, WidgetRef ref, int min, int max) {
     var buttonList = List.generate(
         max - min + 1,
         (index) => getPaddedButton(context,
             child: Text((min + index).toString()),
-            onPressed: () => controller.addRoll(min + index)));
+            onPressed: () => ref.diceRolls.save(DiceRoll(value: min + index))));
     buttonList.add(getPaddedButton(context,
-        child: Icon(Icons.undo), onPressed: () => controller.undoRoll()));
+        child: Icon(Icons.undo),
+        onPressed: () => ref.read(rollHistoryProvider.notifier).undo()));
     return buttonList;
   }
 
   Widget getPaddedButton(BuildContext context,
-      {Widget child, Function onPressed}) {
+      {required Widget child, VoidCallback? onPressed}) {
     var screenWidth = MediaQuery.of(context).size.width;
     var buttonWidth = screenWidth / 6 - 15;
     return Padding(
@@ -72,41 +84,40 @@ class Home extends GetView<Controller> {
   }
 }
 
-class HistoryGraph extends GetView<Controller> {
+class HistoryGraph extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    return Obx(() => LineChart(LineChartData(lineBarsData: getHistory())));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rollHistory = ref.watch(rollHistoryProvider);
+    return AsyncValueWidget(value: rollHistory, data: getHistoryChart);
   }
 
-  List<LineChartBarData> getHistory() {
-    return [
-      LineChartBarData(colors: [Colors.blue], spots: getSpots())
-    ];
-  }
-
-  List<FlSpot> getSpots() {
-    var history = controller.rollHistory
+  Widget getHistoryChart(List<DiceRoll> data) {
+    var history = data
         .asMap()
         .entries
-        .map((element) =>
-            FlSpot(element.key.toDouble(), element.value.toDouble()))
+        .map((roll) => FlSpot(roll.key.toDouble(), roll.value.value.toDouble()))
         .toList();
-    return history.isEmpty ? [FlSpot(0, 0)] : history;
+    history = history.isEmpty ? [FlSpot(0, 0)] : history;
+    return LineChart(LineChartData(lineBarsData: [
+      LineChartBarData(colors: [Colors.blue], spots: history)
+    ]));
   }
 }
 
-class StackedRollGraph extends GetView<Controller> {
+class StackedRollGraph extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    return Obx(() => BarChart(BarChartData(barGroups: getCounts())));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rollCounts = ref.watch(getDiceCountProvider);
+    return AsyncValueWidget(value: rollCounts, data: getRollCountChart);
   }
 
-  List<BarChartGroupData> getCounts() {
-    return controller.rollCounts
-        .map((element) => BarChartGroupData(
-              x: element.value,
-              barRods: [BarChartRodData(y: element.count().toDouble())],
-            ))
-        .toList();
+  Widget getRollCountChart(IMap<DiceRoll, int> rollCounts) {
+    return BarChart(BarChartData(
+        barGroups: rollCounts.entries
+            .map((element) => BarChartGroupData(
+                  x: element.key.value,
+                  barRods: [BarChartRodData(y: element.value.toDouble())],
+                ))
+            .toList()));
   }
 }
