@@ -23,6 +23,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   shared_preferences_riverpod: ^0.3.0
   shared_preferences: ^2.2.0
+  badges: ^3.1.1
 
 dev_dependencies:
   flutter_launcher_icons: ^0.9.0
