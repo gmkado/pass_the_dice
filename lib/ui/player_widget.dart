@@ -6,7 +6,10 @@ import '../providers/steal_history.dart';
 
 class PlayerWidget extends ConsumerWidget {
   final Player player;
-  const PlayerWidget(this.player, {super.key});
+  final IconData? faceOverride;
+
+  const PlayerWidget(this.player, {super.key, this.faceOverride});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stolenFromCount = ref.watch(GetStolenFromCountProvider(player));
@@ -16,7 +19,7 @@ class PlayerWidget extends ConsumerWidget {
         Theme.of(context).textTheme.labelLarge!.copyWith(fontSize: 20);
     var playerColor = playerToColorMap[player];
     return Row(children: [
-      Icon(size: 70, Icons.sentiment_neutral, color: playerColor),
+      PlayerFaceWidget(player, faceOverride: faceOverride),
       Column(children: [
         Badge.count(
             backgroundColor: playerColor,
@@ -36,5 +39,20 @@ class PlayerWidget extends ConsumerWidget {
             count: stoleCount),
       ]),
     ]);
+  }
+}
+
+class PlayerFaceWidget extends StatelessWidget {
+  final Player player;
+  final IconData? faceOverride;
+
+  const PlayerFaceWidget(this.player, {super.key, this.faceOverride});
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+        size: 70,
+        faceOverride ?? Icons.sentiment_neutral,
+        color: playerToColorMap[player]);
   }
 }
