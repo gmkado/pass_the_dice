@@ -1,20 +1,17 @@
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_data/flutter_data.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'async_value_widget.dart';
+import 'package:pass_the_dice/shared_prefs_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'controller.dart';
-import 'dice_roll.dart';
-import 'main.data.dart';
 
 void main() async {
-  runApp(
-    ProviderScope(
-      child: MainApp(),
-      overrides: [configureRepositoryLocalStorage()],
-    ),
-  );
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  runApp(ProviderScope(
+    child: MainApp(),
+    overrides: [getSharedPrefsProvider.overrideWithValue(prefs)],
+  ));
 }
 
 class MainApp extends HookConsumerWidget {
@@ -22,43 +19,31 @@ class MainApp extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    var useBarChart = ref.watch(useBarChartProvider);
     return MaterialApp(
         home: Scaffold(
-            body: AsyncValueWidget(
-                value: ref.watch(repositoryInitializerProvider),
-                data: (_) => HomePage())));
-  }
-}
-
-class HomePage extends HookConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final appStateAsyncValue = ref.watch(getAppStateProvider);
-    return AsyncValueWidget(
-        value: appStateAsyncValue,
-        data: (appState) => Scaffold(
             appBar: AppBar(
               title: Text("Pass the dice"),
               actions: [
                 Switch(
                     activeTrackColor: Colors.white,
                     activeColor: Colors.blue.shade800,
-                    value: appState.showBarchart,
+                    value: useBarChart,
                     onChanged: (val) {
-                      appState.copyWith(showBarchart: val).save();
+                      ref.read(useBarChartProvider.notifier).update(val);
                     }),
                 IconButton(
                     icon: Icon(Icons.delete),
-                    onPressed: () => ref.diceRolls.clear())
+                    onPressed: () =>
+                        ref.read(rollHistoryProvider.notifier).clear())
               ],
             ),
             body: Column(children: [
               Expanded(
                   child: Padding(
                       padding: EdgeInsets.all(16),
-                      child: appState.showBarchart
-                          ? StackedRollGraph()
-                          : HistoryGraph())),
+                      child:
+                          useBarChart ? StackedRollGraph() : HistoryGraph())),
               Wrap(children: getButtonList(context, ref, 2, 12))
             ])));
   }
@@ -69,7 +54,8 @@ class HomePage extends HookConsumerWidget {
         max - min + 1,
         (index) => getPaddedButton(context,
             child: Text((min + index).toString()),
-            onPressed: () => ref.diceRolls.save(DiceRoll(value: min + index))));
+            onPressed: () =>
+                ref.read(rollHistoryProvider.notifier).add(min + index)));
     buttonList.add(getPaddedButton(context,
         child: Icon(Icons.undo),
         onPressed: () => ref.read(rollHistoryProvider.notifier).undo()));
@@ -92,14 +78,10 @@ class HistoryGraph extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final rollHistory = ref.watch(rollHistoryProvider);
-    return AsyncValueWidget(value: rollHistory, data: getHistoryChart);
-  }
-
-  Widget getHistoryChart(List<DiceRoll> data) {
-    var history = data
+    var history = rollHistory
         .asMap()
         .entries
-        .map((roll) => FlSpot(roll.key.toDouble(), roll.value.value.toDouble()))
+        .map((roll) => FlSpot(roll.key.toDouble(), roll.value.toDouble()))
         .toList();
     history = history.isEmpty ? [FlSpot(0, 0)] : history;
     return LineChart(LineChartData(
@@ -111,14 +93,10 @@ class StackedRollGraph extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final rollCounts = ref.watch(getDiceCountProvider);
-    return AsyncValueWidget(value: rollCounts, data: getRollCountChart);
-  }
-
-  Widget getRollCountChart(IMap<DiceRoll, int> rollCounts) {
     return BarChart(BarChartData(
         barGroups: rollCounts.entries
             .map((element) => BarChartGroupData(
-                  x: element.key.value,
+                  x: element.key,
                   barRods: [BarChartRodData(toY: element.value.toDouble())],
                 ))
             .toList()));
