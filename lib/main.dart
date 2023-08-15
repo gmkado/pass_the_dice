@@ -1,8 +1,8 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_data/flutter_data.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'async_value_widget.dart';
 import 'controller.dart';
 import 'dice_roll.dart';
@@ -33,30 +33,34 @@ class MainApp extends HookConsumerWidget {
 class HomePage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final showBarchart = useState(false);
-    return Scaffold(
-        appBar: AppBar(
-          title: Text("Pass the dice"),
-          actions: [
-            Switch(
-                activeTrackColor: Colors.white,
-                activeColor: Colors.blue.shade800,
-                value: showBarchart.value,
-                onChanged: (val) => showBarchart.value = val),
-            IconButton(
-                icon: Icon(Icons.delete),
-                onPressed: () => ref.diceRolls.clear())
-          ],
-        ),
-        body: Column(children: [
-          Expanded(
-              child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: showBarchart.value
-                      ? StackedRollGraph()
-                      : HistoryGraph())),
-          Wrap(children: getButtonList(context, ref, 2, 12))
-        ]));
+    final appStateAsyncValue = ref.watch(getAppStateProvider);
+    return AsyncValueWidget(
+        value: appStateAsyncValue,
+        data: (appState) => Scaffold(
+            appBar: AppBar(
+              title: Text("Pass the dice"),
+              actions: [
+                Switch(
+                    activeTrackColor: Colors.white,
+                    activeColor: Colors.blue.shade800,
+                    value: appState.showBarchart,
+                    onChanged: (val) {
+                      appState.copyWith(showBarchart: val).save();
+                    }),
+                IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () => ref.diceRolls.clear())
+              ],
+            ),
+            body: Column(children: [
+              Expanded(
+                  child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: appState.showBarchart
+                          ? StackedRollGraph()
+                          : HistoryGraph())),
+              Wrap(children: getButtonList(context, ref, 2, 12))
+            ])));
   }
 
   List<Widget> getButtonList(
@@ -98,9 +102,8 @@ class HistoryGraph extends ConsumerWidget {
         .map((roll) => FlSpot(roll.key.toDouble(), roll.value.value.toDouble()))
         .toList();
     history = history.isEmpty ? [FlSpot(0, 0)] : history;
-    return LineChart(LineChartData(lineBarsData: [
-      LineChartBarData(colors: [Colors.blue], spots: history)
-    ]));
+    return LineChart(LineChartData(
+        lineBarsData: [LineChartBarData(color: Colors.blue, spots: history)]));
   }
 }
 
@@ -116,7 +119,7 @@ class StackedRollGraph extends ConsumerWidget {
         barGroups: rollCounts.entries
             .map((element) => BarChartGroupData(
                   x: element.key.value,
-                  barRods: [BarChartRodData(y: element.value.toDouble())],
+                  barRods: [BarChartRodData(toY: element.value.toDouble())],
                 ))
             .toList()));
   }

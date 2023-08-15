@@ -1,6 +1,8 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:flutter_data/flutter_data.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'app_state.dart';
 import 'dice_roll.dart';
 import 'main.data.dart';
 
@@ -10,14 +12,14 @@ part 'controller.g.dart';
 class RollHistory extends _$RollHistory {
   @override
   FutureOr<List<DiceRoll>> build() async {
-    final dice = ref.diceRolls.watchAll(remote: false);
+    final dice = ref.diceRolls.watchAll();
     return dice.model ?? [];
   }
 
   void undo() async {
     if (state.valueOrNull?.lastOrNull == null) return;
 
-    ref.diceRolls.delete(state.requireValue.last, remote: false);
+    ref.diceRolls.delete(state.requireValue.last);
   }
 }
 
@@ -33,4 +35,15 @@ FutureOr<IMap<DiceRoll, int>> getDiceCount(GetDiceCountRef ref) async {
       ));
 
   return counts.lock;
+}
+
+@riverpod
+FutureOr<AppState> getAppState(GetAppStateRef ref) async {
+  var appState = await ref.appStates.findOne(1);
+  if (appState == null) {
+    appState = AppState(id: 1, showBarchart: false);
+    appState.save();
+  }
+
+  return appState;
 }
