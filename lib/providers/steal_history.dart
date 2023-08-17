@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:pass_the_dice/providers/shared_prefs.dart';
 import 'package:pass_the_dice/util/shared_preferences_riverpod.dart';
@@ -49,4 +48,19 @@ int getStolenFromCount(GetStolenFromCountRef ref, Player player) {
 int getStoleToCount(GetStoleToCountRef ref, Player player) {
   final history = ref.watch(stealHistoryProvider);
   return history.count((element) => element.to == player);
+}
+
+@riverpod
+IList<int> getCumulativeStealCount(
+    GetCumulativeStealCountRef ref, Player player) {
+  final history = ref.watch(stealHistoryProvider);
+  int count = 0;
+  return [
+    for (final steal in history)
+      steal.to == player
+          ? ++count
+          : steal.from == player
+              ? --count
+              : count
+  ].lock;
 }
