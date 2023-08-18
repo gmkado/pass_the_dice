@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../model/player.dart';
+import '../providers/dragged_player.dart';
 import '../providers/steal_history.dart';
 
 class PlayerWidget extends ConsumerWidget {
@@ -12,8 +13,11 @@ class PlayerWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stolenFromCount = ref.watch(GetStolenFromCountProvider(player));
-    final stoleCount = ref.watch(GetStoleToCountProvider(player));
+    final potentialStealer = ref.watch(draggedPlayerProvider);
+    final stolenFromCount =
+        ref.watch(GetStolenFromCountProvider(player, potentialStealer));
+    final stoleCount =
+        ref.watch(GetStoleToCountProvider(player, potentialStealer));
 
     var textStyle =
         Theme.of(context).textTheme.labelLarge!.copyWith(fontSize: 20);

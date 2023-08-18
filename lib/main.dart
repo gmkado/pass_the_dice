@@ -46,6 +46,7 @@ class MainApp extends HookConsumerWidget {
             ),
             body: Column(children: [
               Expanded(
+                flex: 5,
                 child: Swiper(
                   itemCount: 3,
                   itemBuilder: (ctx, index) {
@@ -75,11 +76,11 @@ class MainApp extends HookConsumerWidget {
                       builder: DotSwiperPaginationBuilder(color: Colors.grey)),
                 ),
               ),
-              Expanded(
-                  child: Padding(
-                padding: const EdgeInsets.all(50.0),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50.0, vertical: 30),
                 child: StealWidget(),
-              )),
+              ),
               DiceButtonList()
             ])));
   }

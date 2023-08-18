@@ -10,16 +10,19 @@ import '../model/steal.dart';
 class StealWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        DraggablePlayerWidget(Player.orange),
-        DraggablePlayerWidget(Player.blue),
+    return AspectRatio(
+      aspectRatio: 1.5,
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          DraggablePlayerWidget(Player.orange),
+          DraggablePlayerWidget(Player.blue),
+        ]),
+        Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          DraggablePlayerWidget(Player.white),
+          DraggablePlayerWidget(Player.red),
+        ])
       ]),
-      Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        DraggablePlayerWidget(Player.white),
-        DraggablePlayerWidget(Player.red),
-      ])
-    ]);
+    );
   }
 }
 

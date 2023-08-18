@@ -22,15 +22,20 @@ class StealHistory extends _$StealHistory {
 }
 
 @riverpod
-int getStolenFromCount(GetStolenFromCountRef ref, Player player) {
+int getStolenFromCount(
+    GetStolenFromCountRef ref, Player player, Player? stealer) {
   final history = ref.watch(stealHistoryProvider);
-  return history.count((element) => element.from == player);
+  return history.count((element) =>
+      element.from == player &&
+      (stealer == null || stealer == player || stealer == element.to));
 }
 
 @riverpod
-int getStoleToCount(GetStoleToCountRef ref, Player player) {
+int getStoleToCount(GetStoleToCountRef ref, Player player, Player? stealer) {
   final history = ref.watch(stealHistoryProvider);
-  return history.count((element) => element.to == player);
+  return history.count((element) =>
+      element.to == player &&
+      (stealer == null || stealer == player || stealer == element.from));
 }
 
 @riverpod
