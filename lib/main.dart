@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:pass_the_dice/providers/item_provider.dart';
 import 'package:pass_the_dice/providers/shared_prefs.dart';
-import 'package:pass_the_dice/providers/use_barchart.dart';
 import 'package:pass_the_dice/ui/dice_button_list.dart';
 import 'package:pass_the_dice/ui/roll_bar_chart.dart';
 import 'package:pass_the_dice/ui/roll_line_chart.dart';
@@ -25,19 +24,11 @@ class MainApp extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final useBarChart = ref.watch(useBarChartProvider);
     return MaterialApp(
         home: Scaffold(
             appBar: AppBar(
               title: Text("Pass the dice"),
               actions: [
-                Switch(
-                    activeTrackColor: Colors.white,
-                    activeColor: Colors.blue.shade800,
-                    value: useBarChart,
-                    onChanged: (val) {
-                      ref.read(useBarChartProvider.notifier).update(val);
-                    }),
                 IconButton(
                     icon: Icon(Icons.delete),
                     onPressed: () =>
