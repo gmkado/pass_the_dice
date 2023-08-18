@@ -1,40 +1,23 @@
-import 'dart:convert';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:pass_the_dice/providers/shared_prefs.dart';
-import 'package:pass_the_dice/util/shared_preferences_riverpod.dart';
+import 'package:pass_the_dice/providers/item_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../model/item.dart';
 import '../model/player.dart';
 import '../model/steal.dart';
 
 part 'steal_history.g.dart';
 
-final _stealHistoryProvider = createMapListPrefProvider<Steal>(
-  prefs: (ref) => ref.read(getSharedPrefsProvider),
-  prefKey: SharedPrefKeys.steals.name,
-  mapFrom: (stealString) => Steal.fromJson(jsonDecode(stealString)),
-  mapTo: (steal) => jsonEncode(steal.toJson()),
-);
-
 @Riverpod(keepAlive: true)
 class StealHistory extends _$StealHistory {
   @override
   IList<Steal> build() {
-    final dice = ref.watch(_stealHistoryProvider);
-    return dice;
-  }
-
-  Future undo() async {
-    if (state.lastOrNull == null) return;
-    await ref.read(_stealHistoryProvider.notifier).update(state.removeLast());
-  }
-
-  Future clear() async {
-    await ref.read(_stealHistoryProvider.notifier).update(<Steal>[].lock);
+    final dice = ref.watch(itemHistoryProvider).map((item) => item.steal);
+    return dice.nonNulls.toIList();
   }
 
   Future add(Steal steal) async {
-    await ref.read(_stealHistoryProvider.notifier).update(state.add(steal));
+    await ref.read(itemHistoryProvider.notifier).add(Item(steal: steal));
   }
 }
 

@@ -11,7 +11,7 @@ class RollLineChart extends ConsumerWidget {
     var history = rollHistory
         .asMap()
         .entries
-        .map((roll) => FlSpot(roll.key.toDouble(), roll.value.toDouble()))
+        .map((roll) => FlSpot(roll.key.toDouble(), roll.value.value.toDouble()))
         .toList();
     history = history.isEmpty ? [FlSpot(0, 0)] : history;
     return LineChart(LineChartData(

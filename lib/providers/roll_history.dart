@@ -1,38 +1,24 @@
 import 'dart:collection';
 
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:pass_the_dice/providers/shared_prefs.dart';
-import 'package:pass_the_dice/util/shared_preferences_riverpod.dart';
+import 'package:pass_the_dice/providers/item_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'roll_history.g.dart';
+import '../model/item.dart';
+import '../model/roll.dart';
 
-final _diceRollsProvider = createMapListPrefProvider<int>(
-  prefs: (ref) => ref.read(getSharedPrefsProvider),
-  prefKey: SharedPrefKeys.diceRolls.name,
-  mapFrom: (rollString) => int.parse(rollString),
-  mapTo: (roll) => roll.toString(),
-);
+part 'roll_history.g.dart';
 
 @Riverpod(keepAlive: true)
 class RollHistory extends _$RollHistory {
   @override
-  IList<int> build() {
-    final dice = ref.watch(_diceRollsProvider);
-    return dice;
+  IList<Roll> build() {
+    final dice = ref.watch(itemHistoryProvider).map((item) => item.roll);
+    return dice.nonNulls.toIList();
   }
 
-  Future undo() async {
-    if (state.lastOrNull == null) return;
-    await ref.read(_diceRollsProvider.notifier).update(state.removeLast());
-  }
-
-  Future clear() async {
-    await ref.read(_diceRollsProvider.notifier).update(<int>[].lock);
-  }
-
-  Future add(int diceRoll) async {
-    await ref.read(_diceRollsProvider.notifier).update(state.add(diceRoll));
+  Future add(Roll diceRoll) async {
+    await ref.read(itemHistoryProvider.notifier).add(Item(roll: diceRoll));
   }
 }
 
@@ -42,7 +28,7 @@ IMap<int, int> getDiceCount(GetDiceCountRef ref) {
   final counts = SplayTreeMap<int, int>();
 
   rollHistory.forEach((roll) => counts.update(
-        roll,
+        roll.value,
         (value) => value + 1,
         ifAbsent: () => 1,
       ));

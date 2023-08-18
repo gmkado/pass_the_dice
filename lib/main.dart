@@ -1,6 +1,7 @@
 import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:pass_the_dice/providers/item_provider.dart';
 import 'package:pass_the_dice/providers/shared_prefs.dart';
 import 'package:pass_the_dice/providers/use_barchart.dart';
 import 'package:pass_the_dice/ui/dice_button_list.dart';
@@ -9,7 +10,6 @@ import 'package:pass_the_dice/ui/roll_line_chart.dart';
 import 'package:pass_the_dice/ui/steal_line_chart.dart';
 import 'package:pass_the_dice/ui/steal_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'providers/roll_history.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,12 +41,11 @@ class MainApp extends HookConsumerWidget {
                 IconButton(
                     icon: Icon(Icons.delete),
                     onPressed: () =>
-                        ref.read(rollHistoryProvider.notifier).clear())
+                        ref.read(itemHistoryProvider.notifier).clear())
               ],
             ),
             body: Column(children: [
               Expanded(
-                // TODO:https://github.com/imaNNeo/fl_chart/issues/202
                 child: Swiper(
                   itemCount: 4,
                   itemBuilder: (ctx, index) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:pass_the_dice/providers/item_provider.dart';
 
+import '../model/roll.dart';
 import '../providers/roll_history.dart';
 
 class DiceButtonList extends HookConsumerWidget {
@@ -15,11 +17,12 @@ class DiceButtonList extends HookConsumerWidget {
         max - min + 1,
         (index) => getPaddedButton(context,
             child: Text((min + index).toString()),
-            onPressed: () =>
-                ref.read(rollHistoryProvider.notifier).add(min + index)));
+            onPressed: () => ref
+                .read(rollHistoryProvider.notifier)
+                .add(Roll(value: min + index))));
     buttonList.add(getPaddedButton(context,
         child: Icon(Icons.undo),
-        onPressed: () => ref.read(rollHistoryProvider.notifier).undo()));
+        onPressed: () => ref.read(itemHistoryProvider.notifier).undo()));
     return Wrap(children: buttonList);
   }
 
