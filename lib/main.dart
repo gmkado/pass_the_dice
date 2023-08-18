@@ -47,36 +47,39 @@ class MainApp extends HookConsumerWidget {
             body: Column(children: [
               Expanded(
                 child: Swiper(
-                  itemCount: 4,
+                  itemCount: 3,
                   itemBuilder: (ctx, index) {
-                    switch (index) {
-                      case 0:
-                        return Padding(
-                            padding: EdgeInsets.all(30), child: RollBarChart());
-                      case 1:
-                        return Padding(
-                            padding: EdgeInsets.all(30),
-                            child: RollLineChart());
-                      case 2:
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 30, vertical: 150),
-                          child: StealWidget(),
-                        );
-                      case 3:
-                        return Padding(
-                          padding: const EdgeInsets.all(30),
-                          child: StealLineChart(),
-                        );
-                      default:
-                        throw ArgumentError.value(
-                            index, 'invalid index', 'index');
-                    }
+                    final (title, chart) = switch (index) {
+                      0 => ("Roll History", RollLineChart()),
+                      1 => ("Roll Spread", RollBarChart()),
+                      2 => ("Steal History", StealLineChart()),
+                      _ => throw ArgumentError.value(
+                          index, 'invalid index', 'index')
+                    };
+                    return Padding(
+                      padding: const EdgeInsets.all(30.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            title,
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          Expanded(
+                            child: chart,
+                          )
+                        ],
+                      ),
+                    );
                   },
                   pagination: SwiperPagination(
                       builder: DotSwiperPaginationBuilder(color: Colors.grey)),
                 ),
               ),
+              Expanded(
+                  child: Padding(
+                padding: const EdgeInsets.all(50.0),
+                child: StealWidget(),
+              )),
               DiceButtonList()
             ])));
   }
