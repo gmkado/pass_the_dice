@@ -25,13 +25,10 @@ class RollHistory extends _$RollHistory {
 @riverpod
 IMap<int, int> getDiceCount(GetDiceCountRef ref) {
   final rollHistory = ref.watch(rollHistoryProvider);
-  final counts = SplayTreeMap<int, int>();
-
-  rollHistory.forEach((roll) => counts.update(
-        roll.value,
-        (value) => value + 1,
-        ifAbsent: () => 1,
-      ));
+  final counts = {for (var i = 2; i <= 12; i++) i: 0};
+  for (final roll in rollHistory) {
+    counts[roll.value] = counts[roll.value]! + 1;
+  }
 
   return counts.lock;
 }
